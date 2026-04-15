@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "316104868795",
+    "project_id": "hustleamclothingco",
+    "storage_bucket": "hustleamclothingco.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316104868795:android:09ba42a0d48275015f3a9e",
+        "android_client_info": {
+          "package_name": "com.example.hustleamapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7dmVrOT5G0CUNeni_1kfg2O5UGbMnxJc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
