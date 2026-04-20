@@ -189,7 +189,7 @@ class LocalDatabase {
     await db.delete('cart');
   }
 
-  // --- CRUD OPERATION INI ---
+  // --- CRUD OPERATION ---
 
   Future<void> addFavorite(Product product) async {
     final db = await instance.database;
