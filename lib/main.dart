@@ -204,12 +204,21 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        if (snapshot.hasData && snapshot.data != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final cartBloc = context.read<CartBloc>();
+        // if (snapshot.hasData && snapshot.data != null) {
+        //   WidgetsBinding.instance.addPostFrameCallback((_) {
+        //     final cartBloc = context.read<CartBloc>();
 
-            if (!cartBloc.state.isLoading && cartBloc.state.items.isEmpty) {
-              cartBloc.add(LoadCart("local"));
+        //     if (!cartBloc.state.isLoading && cartBloc.state.items.isEmpty) {
+        //       cartBloc.add(LoadCart("local"));
+        //     }
+        //   });
+
+        final user = snapshot.data;
+
+        if (user != null) {
+          Future.microtask(() {
+            if (context.mounted) {
+              context.read<CartBloc>().add(LoadCart(user.uid));
             }
           });
 

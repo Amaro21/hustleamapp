@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/product_models.dart';
+import 'package:flutter/foundation.dart';
 
 class HustleamRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -27,7 +28,15 @@ class HustleamRepository {
     });
   }
 
-  Future<void> logout() => _auth.signOut();
+  Future<void> logout() async {
+    try {
+      await _auth.signOut();
+      debugPrint("DEBUG: Firebase Sign Out Successful");
+    } catch (e) {
+      debugPrint("DEBUG: Logout Error: $e");
+    }
+  }
+
   Future<void> updatePassword(String p) => _auth.currentUser!.updatePassword(p);
   Future<void> sendPasswordResetEmail(String e) =>
       _auth.sendPasswordResetEmail(email: e);
@@ -63,7 +72,7 @@ class HustleamRepository {
   Future<void> addToCart(String uid, CartItem item) async {
     final String docId = "${item.id}_${item.selectedSize}";
 
-    print(
+    debugPrint(
       "FIREBASE: Attempting to add ${item.name} to path: users/$uid/cart/$docId",
     );
 
@@ -73,9 +82,9 @@ class HustleamRepository {
 
       await docRef.set(item.toFirestore(), SetOptions(merge: true));
 
-      print("FIREBASE: Successfully wrote to database!");
+      debugPrint("FIREBASE: Successfully wrote to database!");
     } catch (e) {
-      print("FIREBASE ERROR: $e");
+      debugPrint("FIREBASE ERROR: $e");
     }
   }
 

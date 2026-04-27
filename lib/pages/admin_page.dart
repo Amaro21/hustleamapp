@@ -63,14 +63,22 @@ class _AdminPageState extends State<AdminPage> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('orders').snapshots(),
       builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const LinearProgressIndicator(color: Colors.black);
+        }
+
         double income = 0;
-        int count = 0;
-        if (snapshot.hasData) {
-          count = snapshot.data!.docs.length;
-          for (var doc in snapshot.data!.docs) {
-            income += (doc['totalPrice'] ?? 0).toDouble();
+        int count = snapshot.data!.docs.length;
+
+        for (var doc in snapshot.data!.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          // Safety check for price types (int vs double)
+          final price = data['totalPrice'];
+          if (price != null) {
+            income += (price as num).toDouble();
           }
         }
+
         return Row(
           children: [
             _buildStatCard(
@@ -100,8 +108,10 @@ class _AdminPageState extends State<AdminPage> {
           .where('status', isEqualTo: 'Processing')
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData)
+        if (!snapshot.hasData) {
           return const LinearProgressIndicator(color: Colors.black);
+        }
+
         final orders = snapshot.data!.docs;
 
         if (orders.isEmpty) {
@@ -140,7 +150,7 @@ class _AdminPageState extends State<AdminPage> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 15,
                   ),
                 ],
@@ -167,7 +177,12 @@ class _AdminPageState extends State<AdminPage> {
                         child: OutlinedButton(
                           onPressed: isThisLoading
                               ? null
-                              : () => repo.rejectOrder(docId),
+                              : () async {
+                                  setState(() => _processingOrderId = docId);
+                                  await repo.rejectOrder(docId);
+                                  if (!mounted) return;
+                                  setState(() => _processingOrderId = null);
+                                },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red,
                             shape: const StadiumBorder(),
@@ -191,30 +206,26 @@ class _AdminPageState extends State<AdminPage> {
                                   try {
                                     await repo.acceptOrder(docId, items);
 
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text("Order Accepted"),
-                                          behavior: SnackBarBehavior.floating,
-                                        ),
-                                      );
-                                    }
+                                    if (!mounted) return;
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text("Order Accepted"),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
                                   } catch (e) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text("Error: $e"),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text("Error: $e"),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
                                   } finally {
-                                    if (mounted)
+                                    if (mounted) {
                                       setState(() => _processingOrderId = null);
+                                    }
                                   }
                                 },
                           child: isThisLoading
@@ -251,7 +262,9 @@ class _AdminPageState extends State<AdminPage> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('products').snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox();
+        if (!snapshot.hasData) {
+          return const SizedBox();
+        }
         return Column(
           children: snapshot.data!.docs.map((doc) {
             var p = doc.data() as Map<String, dynamic>;
@@ -379,13 +392,9 @@ class _AdminPageState extends State<AdminPage> {
                 ),
                 items: const [
                   DropdownMenuItem(
-                    value: 'best_seller',
-                    child: Text("Best Seller"),
-                  ),
+                      value: 'best_seller', child: Text("Best Seller")),
                   DropdownMenuItem(
-                    value: 'new_collection',
-                    child: Text("New Collection"),
-                  ),
+                      value: 'new_collection', child: Text("New Collection")),
                   DropdownMenuItem(value: 'limited', child: Text("Limited")),
                 ],
                 onChanged: (val) => selectedTag = val!,
@@ -395,9 +404,12 @@ class _AdminPageState extends State<AdminPage> {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (nameCtrl.text.isEmpty || priceCtrl.text.isEmpty) return;
-                    FirebaseFirestore.instance.collection('products').add({
+
+                    await FirebaseFirestore.instance
+                        .collection('products')
+                        .add({
                       'name': nameCtrl.text.trim(),
                       'price': double.tryParse(priceCtrl.text) ?? 0.0,
                       'image': imgCtrl.text.trim(),
@@ -407,7 +419,13 @@ class _AdminPageState extends State<AdminPage> {
                       'availableSizes': ['S', 'M', 'L', 'XL'],
                       'availableColors': ['Black'],
                     });
+
+                    if (!mounted) return;
+
                     Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text("PRODUCT PUBLISHED LIVE"),
+                        behavior: SnackBarBehavior.floating));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
@@ -479,7 +497,8 @@ class _AdminPageState extends State<AdminPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02), blurRadius: 15),
           ],
         ),
         child: Column(
