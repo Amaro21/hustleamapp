@@ -58,6 +58,16 @@ class _AdminPageState extends State<AdminPage> {
     );
   }
 
+  void _updateStockLogic(String docId, int newStock) {
+    if (newStock < 0) return; // Prevent negative stock
+
+    // Updates Firestore instantly
+    FirebaseFirestore.instance
+        .collection('products')
+        .doc(docId)
+        .update({'stock': newStock});
+  }
+
   // --- INCOME TRACKER ---
   Widget _buildIncomeTracker() {
     return StreamBuilder<QuerySnapshot>(
@@ -268,44 +278,75 @@ class _AdminPageState extends State<AdminPage> {
         return Column(
           children: snapshot.data!.docs.map((doc) {
             var p = doc.data() as Map<String, dynamic>;
+            final String id = doc.id;
             int stock = p['stock'] ?? 0;
+
             return Container(
-              margin: const EdgeInsets.only(bottom: 10),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.01),
+                      blurRadius: 10)
+                ],
               ),
-              child: ListTile(
-                leading: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    p['image'],
-                    width: 45,
-                    height: 45,
-                    fit: BoxFit.cover,
-                    errorBuilder: (c, e, s) => const Icon(Icons.image),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(p['image'],
+                        width: 45, height: 45, fit: BoxFit.cover),
                   ),
-                ),
-                title: Text(
-                  p['name'].toString().toUpperCase(),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Text(p['name'].toString().toUpperCase(),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
-                ),
-                subtitle: Text(
-                  "Stock: $stock",
-                  style: TextStyle(
-                    color: stock < 5 ? Colors.red : Colors.green,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
+                  // --- STOCK CONTROL BUTTONS ---
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text("$stock IN STOCK",
+                          style: TextStyle(
+                              color: stock < 5 ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 10)),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          _stockAdjustBtn(Icons.remove,
+                              () => _updateStockLogic(id, stock - 1)),
+                          const SizedBox(width: 10),
+                          _stockAdjustBtn(Icons.add,
+                              () => _updateStockLogic(id, stock + 1)),
+                        ],
+                      )
+                    ],
+                  )
+                ],
               ),
             );
           }).toList(),
         );
       },
+    );
+  }
+
+  Widget _stockAdjustBtn(IconData icon, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: Colors.black),
+      ),
     );
   }
 

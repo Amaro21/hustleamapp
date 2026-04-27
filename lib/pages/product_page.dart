@@ -215,34 +215,35 @@ class _ProductPageState extends State<ProductPage> {
                                     );
                                   },
                           ),
-                          const SizedBox(height: 12),
-                          _buildMainActionBtn(
-                            label: "BUY IT NOW",
-                            color: Colors.white,
-                            textColor: Colors.black,
-                            isOutlined: true,
-                            onTap: stock <= 0
-                                ? null
-                                : () {
-                                    CartItem item = CartItem(
-                                      id: widget.productId,
-                                      name: name,
-                                      image: imageUrl,
-                                      price: price,
-                                      selectedSize: selectedSize,
-                                      quantity: 1,
-                                    );
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => CheckoutPage(
-                                          itemsToBuy: [item],
-                                          isCartCheckout: false,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                          ),
+                          if (stock > 0) ...[
+                            const SizedBox(height: 12),
+                            _buildMainActionBtn(
+                              label: "BUY IT NOW",
+                              color: Colors.white,
+                              textColor: Colors.black,
+                              isOutlined: true,
+                              onTap: () {
+                                CartItem item = CartItem(
+                                  id: widget.productId,
+                                  name: name,
+                                  image: imageUrl,
+                                  price: price,
+                                  selectedSize: selectedSize,
+                                  quantity: 1,
+                                );
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CheckoutPage(
+                                      itemsToBuy: [item],
+                                      isCartCheckout: false,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
 
                           const SizedBox(height: 40),
 
